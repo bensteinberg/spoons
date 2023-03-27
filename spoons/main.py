@@ -157,18 +157,17 @@ def repopulate(shared_lock, shared_list, vms, spec):
 
 def ignite(spec):
     """
-    Spin up a VM and return its name
+    Spin up a VM, start it, and return its name
     """
     name = str(uuid.uuid1())
     if spec.dryrun:
-        cmd = f'echo {name}'
-    else:
-        cmd = f'sudo ignite create { spec.image } --name { name } --cpus { spec.cpus } --memory { spec.memory }GB --size { spec.size }GB --ssh && sudo ignite start { name }'  # noqa
+        return name
+
+    cmd = f'sudo ignite create { spec.image } --name { name } --cpus { spec.cpus } --memory { spec.memory }GB --size { spec.size }GB --ssh'  # noqa
     try:
         result = subprocess.run(shlex.split(cmd), capture_output=True)
         if result.returncode == 0:
             logger.info(f'added VM {name}')
-            return name
         else:
             logger.warning(f"Couldn't ignite a VM: {result.stderr}")
             return None
@@ -176,21 +175,38 @@ def ignite(spec):
         logger.warning(f"Couldn't ignite a VM: {e}")
         return None
 
+    cmd = f'sudo ignite start { name }'
+    try:
+        result = subprocess.run(shlex.split(cmd), capture_output=True)
+        if result.returncode == 0:
+            logger.info(f'started VM {name}')
+            return name
+        else:
+            logger.warning(f"Couldn't start a VM: {result.stderr}")
+            return None
+    except Exception as e:  # which?
+        logger.warning(f"Couldn't start a VM: {e}")
+        return None
+
 
 def douse(name, dryrun):
     logging.info(f'shutting down {name}')
     if dryrun:
         return
-    cmd = f'sudo ignite stop { name } && sudo ignite rm { name }'
-    return subprocess.run(shlex.split(cmd), capture_output=True)
+    for action in ['stop', 'rm']:
+        cmd = f'sudo ignite { action } { name }'
+        subprocess.run(shlex.split(cmd), capture_output=True)
 
 
 def capture(vm, url, dryrun):
-    cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false" && sudo ignite cp { vm }:/root/archive.wacz /tmp/{ vm }.wacz'  # noqa
     try:
+        cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false"'  # noqa
         result = subprocess.run(shlex.split(cmd), capture_output=True)
         if result.returncode == 0:
-            return vm
+            cmd = f'sudo ignite cp { vm }:/root/archive.wacz /tmp/{ vm }.wacz'
+            result = subprocess.run(shlex.split(cmd), capture_output=True)
+            if result.returncode == 0:
+                return vm
     except Exception as e:  # which?
         logger.warning(f"Couldn't capture: {e}")
         raise
