@@ -205,6 +205,8 @@ def capture(vm, url, dryrun):
         if result.returncode == 0:
             cmd = f'sudo ignite cp { vm }:/root/archive.wacz /tmp/{ vm }.wacz'
             result = subprocess.run(shlex.split(cmd), capture_output=True)
+            for line in result.stderr:
+                logger.info(line)
             if result.returncode == 0:
                 return vm
     except Exception as e:  # which?
