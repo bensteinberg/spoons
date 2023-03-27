@@ -163,7 +163,7 @@ def ignite(spec):
     if spec.dryrun:
         cmd = f'echo {name}'
     else:
-        cmd = f'sudo ignite create { spec.image } --name { name } --cpus { spec.cpus } --memory { spec.memory }GB --size { spec.size }GB --ssh'  # noqa
+        cmd = f'sudo ignite create { spec.image } --name { name } --cpus { spec.cpus } --memory { spec.memory }GB --size { spec.size }GB --ssh && sudo ignite start { name }'  # noqa
     try:
         result = subprocess.run(shlex.split(cmd), capture_output=True)
         if result.returncode == 0:
