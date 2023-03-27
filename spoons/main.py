@@ -1,8 +1,9 @@
-import click
 import uuid
 import subprocess
 import shlex
 import atexit
+import validators
+import string
 import logging
 
 from multiprocessing import Lock, Process
@@ -10,7 +11,9 @@ from multiprocessing.managers import AcquirerProxy, BaseManager, ListProxy
 
 from time import sleep
 
-from flask import Flask
+from functools import partial
+
+from flask import Flask, render_template, request, send_file
 
 shared_list = []
 shared_lock = Lock()
@@ -39,24 +42,23 @@ def get_shared_state(host, port, key):
     return manager.get_list(), manager.get_lock()
 
 
-@click.command()
-@click.option('--vms', type=int, default=8, help='Target size of pool')
-@click.option('--image', default='registry.lil.tools/harvardlil/spoon:0.1.1')
-@click.option('--cpus', type=int, default=2)
-@click.option('--memory', type=int, default=1, help='RAM in GB')
-@click.option('--size', type=int, default=6, help='Diskspace in GB')
-@click.option('--host', default='0.0.0.0')
-@click.option('--port', default=5000, type=int)
-@click.option('--dryrun/--no-dryrun', default=False)
-def main(vms, image, cpus, memory, size, host, port, dryrun):
+def create_app(
+    vms=8,
+    image='registry.lil.tools/harvardlil/spoon:0.1.2',
+    cpus=2,
+    memory=1,
+    size=6,
+    dryrun=False
+):
     """
     Warms up a pool of VMs, listens for requests, spins up new VMs as
     needed to maintain target pool size
     """
 
-    # prepare pool structure; consider using a per-run key, which might
-    # give a clue if we leak the process and try to compete for the
-    # same port
+    # prepare pool structure; ~consider using a per-run key, which might~
+    # ~give a clue if we leak the process and try to compete for the~
+    # ~same port~ -- no! in the case of a WSGI server, we need (?) separate
+    # instances of this application to share a pool
     HOST = "127.0.0.1"
     PORT = 35791
     KEY = b"secret"
@@ -64,11 +66,12 @@ def main(vms, image, cpus, memory, size, host, port, dryrun):
 
     spec = Specs(image, cpus, memory, size, dryrun)
 
-    # warm up pool
+    # warm up pool if it hasn't been done already
     for _ in range(vms):
         if vm := ignite(spec):
             with shared_lock:
-                shared_list.append(vm)
+                if len(shared_list) < vms:
+                    shared_list.append(vm)
 
     with shared_lock:
         logger.info(f'pool is now {shared_list}')
@@ -92,18 +95,44 @@ def main(vms, image, cpus, memory, size, host, port, dryrun):
     # start Flask app
     app = Flask(__name__)
 
-    @app.route("/")
+    @app.route("/", methods=['GET', 'POST'])
     def hello():
-        with shared_lock:
-            try:
-                vm = shared_list.pop()
-                logger.info(f'popped {vm}')
-                logger.info(f'pool is now {shared_list}')
-            except IndexError:
-                vm = 'wait....'
-        return vm
+        if request.method == 'GET':
+            # show the form
+            return render_template('index.html')
+        else:
+            url = request.form['url']
+            assert validators.url(url)
+            with shared_lock:
+                try:
+                    vm = shared_list.pop()
+                    logger.info(f'popped { vm }')
+                    logger.info(f'pool is now { shared_list }')
+                except IndexError:
+                    return 'No VM available; please retry.'
+            capture(vm, url, dryrun)
+            url = url.translate(
+                str.maketrans(
+                    string.punctuation,
+                    '_'*len(string.punctuation)
+                )
+            )
+            filename = f'{ url }-{ vm }.wacz'
+            if not dryrun:
+                send_file(
+                    f'/tmp/{ vm }.wacz',
+                    as_attachment=True,
+                    download_name=filename
+                )
+            else:
+                return filename
 
-    app.run(host=host, port=port)
+    return app
+
+
+# this partially-applied function is for use in development, since you can't
+# pass arguments to an application run with waitress-serve
+create_app_dev = partial(create_app, dryrun=True)
 
 
 class Specs:
@@ -156,8 +185,8 @@ def douse(name, dryrun):
     return subprocess.run(shlex.split(cmd), capture_output=True)
 
 
-def capture(vm, url):
-    cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false -o /tmp/{ vm }.wacz"'  # noqa
+def capture(vm, url, dryrun):
+    cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false" && sudo ignite cp { vm }:/root/archive.wacz /tmp/{ vm }.wacz'  # noqa
     try:
         result = subprocess.run(shlex.split(cmd), capture_output=True)
         if result.returncode == 0:
@@ -165,3 +194,6 @@ def capture(vm, url):
     except Exception as e:  # which?
         logger.warning(f"Couldn't capture: {e}")
         raise
+    finally:
+        p = Process(target=douse, args=(vm, dryrun))
+        p.start()
