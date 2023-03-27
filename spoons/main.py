@@ -119,7 +119,7 @@ def create_app(
             )
             filename = f'{ url }-{ vm }.wacz'
             if not dryrun:
-                send_file(
+                return send_file(
                     f'/tmp/{ vm }.wacz',
                     as_attachment=True,
                     download_name=filename
