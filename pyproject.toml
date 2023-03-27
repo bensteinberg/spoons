@@ -17,6 +17,7 @@ flake8 = "^6.0.0"
 
 [tool.poetry.scripts]
 spoons = 'spoons.main:cli'
+waitress-serve = 'waitress.runner:run'
 
 [build-system]
 requires = ["poetry-core"]
