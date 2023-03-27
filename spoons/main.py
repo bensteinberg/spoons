@@ -190,7 +190,7 @@ def ignite(spec):
 
 
 def douse(name, dryrun):
-    logging.info(f'shutting down {name}')
+    logger.info(f'shutting down {name}')
     if dryrun:
         return
     for action in ['stop', 'rm']:
