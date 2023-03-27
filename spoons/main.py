@@ -46,7 +46,7 @@ def create_app(
     vms=8,
     image='registry.lil.tools/harvardlil/spoon:0.1.2',
     cpus=2,
-    memory=1,
+    memory=4,
     size=6,
     dryrun=False
 ):
