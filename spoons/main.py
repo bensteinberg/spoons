@@ -13,7 +13,7 @@ from time import sleep
 
 from functools import partial
 
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, Response
 
 shared_list = []
 shared_lock = Lock()
@@ -109,7 +109,10 @@ def create_app(
                     logger.info(f'popped { vm }')
                     logger.info(f'pool is now { shared_list }')
                 except IndexError:
-                    return 'No VM available; please retry.'
+                    return Response(
+                        'No VM available; please retry.',
+                        status=503
+                    )
             capture(vm, url, dryrun)
             url = url.translate(
                 str.maketrans(
