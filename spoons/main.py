@@ -199,6 +199,9 @@ def douse(name, dryrun):
 
 
 def capture(vm, url, dryrun):
+    if dryrun:
+        logger.info(f'Dry run of capture: { url } by { vm }')
+        return vm
     try:
         cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false"'  # noqa
         result = subprocess.run(shlex.split(cmd), capture_output=True)
