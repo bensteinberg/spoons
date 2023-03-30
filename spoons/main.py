@@ -211,9 +211,12 @@ def capture(vm, url, dryrun):
         return vm
     try:
         cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false"'  # noqa
-        result = subprocess.run(shlex.split(cmd), capture_output=True)
-        output = result.stdout.decode('utf-8').split('\n') + result.stderr.decode('utf-8').split('\n')  # noqa
-        for line in sorted(output):
+        result = subprocess.run(
+            shlex.split(cmd),
+            capture_output=True,
+            stderr=subprocess.STDOUT
+        )
+        for line in result.stdout.decode('utf-8').split('\n'):
             logger.info(line)
         if result.returncode == 0:
             cmd = f'sudo ignite cp { vm }:/root/archive.wacz /tmp/{ vm }.wacz'
