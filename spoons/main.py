@@ -102,7 +102,11 @@ def create_app(
             return render_template('index.html')
         else:
             url = request.form['url']
-            assert validators.url(url)
+            if not validators.url(url):
+                return Response(
+                    'Not a URL',
+                    status=400,
+                )
             with shared_lock:
                 try:
                     vm = shared_list.pop()
