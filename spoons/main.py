@@ -15,6 +15,8 @@ from functools import partial
 
 from flask import Flask, render_template, request, send_file, Response
 
+from werkzeug.exceptions import BadRequest
+
 shared_list = []
 shared_lock = Lock()
 
@@ -101,7 +103,10 @@ def create_app(
             # show the form
             return render_template('index.html')
         else:
-            data = request.get_json() or request.form
+            try:
+                data = request.get_json()
+            except BadRequest:
+                data = request.form
             url = data['url']
             if not validators.url(url):
                 return Response(
