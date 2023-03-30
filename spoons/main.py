@@ -101,7 +101,8 @@ def create_app(
             # show the form
             return render_template('index.html')
         else:
-            url = request.form['url']
+            data = request.get_json() or request.form
+            url = data['url']
             if not validators.url(url):
                 return Response(
                     'Not a URL',
