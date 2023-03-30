@@ -213,7 +213,7 @@ def capture(vm, url, dryrun):
         cmd = f'sudo ignite exec { vm } "xvfb-run --auto-servernum -- scoop \"{ url }\" --headless false"'  # noqa
         result = subprocess.run(
             shlex.split(cmd),
-            capture_output=True,
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
         )
         for line in result.stdout.decode('utf-8').split('\n'):
