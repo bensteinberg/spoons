@@ -5,6 +5,7 @@ import atexit
 import validators
 import string
 import logging
+import os
 
 from multiprocessing import Lock, Process
 from multiprocessing.managers import AcquirerProxy, BaseManager, ListProxy
@@ -45,11 +46,14 @@ def get_shared_state(host, port, key):
 
 
 def create_app(
-    vms=8,
-    image='registry.lil.tools/harvardlil/spoon:0.2.0',
-    cpus=2,
-    memory=4,
-    size=6,
+    vms=int(os.getenv('SPOONS_VMS', '8')),
+    image=os.getenv(
+        'SPOONS_IMAGE',
+        'registry.lil.tools/harvardlil/spoon:0.2.0'
+    ),
+    cpus=int(os.getenv('SPOONS_CPUS', '2')),
+    memory=int(os.getenv('SPOONS_MEMORY', '4')),
+    size=int(os.getenv('SPOONS_SIZE', '6')),
     dryrun=False
 ):
     """
