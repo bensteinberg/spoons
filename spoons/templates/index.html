@@ -4,12 +4,19 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pico.classless.min.css') }}">
     <title>Spoons</title>
 </head>
 <body>
-    <form action="{{ url_for('hello') }}" method="post">
-        <input type="text" name="url">
-        <input type="submit" value="Submit">
-    </form>
+    <main>
+        <p>
+            <form action="{{ url_for('hello') }}" method="post">
+                <div class="grid">
+                    <input type="text" id="url" name="url" placeholder="URL" required>
+                    <button type="submit">Submit</button>
+                </div>  
+            </form>
+        </p>
+    </main>
 </body>
 </html>
