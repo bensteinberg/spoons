@@ -10,7 +10,7 @@ Outstanding questions include:
 - How can ignite (or some other tool) be made to implement a [blocklist like Scoop's](https://github.com/harvard-lil/scoop/blob/main/options.js#L38-L68)?
 - Can the mechanism for concurrency used here be rewritten to run safely in multiple processes? It may make more sense to move to something like a Redis cache or a database table for maintaining the list of VMs.
 - In an earlier iteration, arguments were passed in using Click. Waitress does not allow arguments to be passed on the command line, so this will probably need a way to collect them from the environment.
-- This will need a process or a cron job to clean up old captures.
+- This needs a process or a cron job to clean up old captures, something like `55 * * * * find /tmp -name "*.wacz" -type f -mmin +360 -delete` in the root crontab.
 
 Installation
 ------------
