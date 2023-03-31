@@ -46,7 +46,7 @@ def get_shared_state(host, port, key):
 
 def create_app(
     vms=8,
-    image='registry.lil.tools/harvardlil/spoon:0.1.2',
+    image='registry.lil.tools/harvardlil/spoon:0.2.0',
     cpus=2,
     memory=4,
     size=6,
