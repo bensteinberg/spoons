@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spoons"
-version = "0.2.3"
+version = "0.2.4"
 description = ""
 authors = ["bensteinberg <bsteinberg@law.harvard.edu>"]
 readme = "README.md"
