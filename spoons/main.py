@@ -49,7 +49,7 @@ def create_app(
     vms=int(os.getenv('SPOONS_VMS', '8')),
     image=os.getenv(
         'SPOONS_IMAGE',
-        'registry.lil.tools/harvardlil/spoon:0.2.6'
+        'registry.lil.tools/harvardlil/spoon:0.3.1'
         ),
     cpus=int(os.getenv('SPOONS_CPUS', '2')),
     memory=int(os.getenv('SPOONS_MEMORY', '4')),
